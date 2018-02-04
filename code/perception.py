@@ -19,9 +19,9 @@ def color_thresh(img, rgb_thresh=(160, 160, 160)):
     return color_select
 
 
-def hsv_thresh(rgb_img, low=(15,80,130), high=(30,255,180)):
+def hsv_thresh(rgb_img, low=(15, 80, 130), high=(30, 255, 180)):
     hsv_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2HSV)
-    color_select = np.zeros_like(rgb_img[:,:,0])
+    color_select = np.zeros_like(rgb_img[:, :, 0])
     color_select[cv2.inRange(hsv_img, low, high) == 255] = 1
     return color_select
 
@@ -106,6 +106,7 @@ def image_to_world(binary_img, xpos, ypos, yaw, worldsize, scale):
     xpix, ypix = rover_coords(binary_img)
     return pix_to_world(xpix, ypix, xpos, ypos, yaw, worldsize, scale)
 
+
 # Define a function to perform a perspective transform
 def perspect_transform(image):
     dst_size = 5
@@ -120,6 +121,15 @@ def perspect_transform(image):
     warped = cv2.warpPerspective(image, M, (image.shape[1], image.shape[0]))  # keep same size as input image
 
     return warped
+
+
+# Return true if rover is stable enough to record map data
+def stable(rover):
+    if 1 < rover.pitch < 359:
+        return False
+    elif 1 < rover.roll < 359:
+        return False
+    return True
 
 
 # Apply the above functions in succession and update the Rover state accordingly
@@ -163,9 +173,11 @@ def perception_step(rover):
     obs_world_x, obs_world_y = image_to_world(obstacle, xpos, ypos, yaw, rover.worldmap.shape[0], 10)
     sam_world_x, sam_world_y = image_to_world(sample, xpos, ypos, yaw, rover.worldmap.shape[0], 10)
 
-    rover.worldmap[obs_world_y, obs_world_x, 0] += 1
-    rover.worldmap[sam_world_y, sam_world_x, 1] += 1
-    rover.worldmap[nav_world_y, nav_world_x, 2] += 1
+    if stable(rover):
+        rover.worldmap[obs_world_y, obs_world_x, 0] += 1
+        rover.worldmap[sam_world_y, sam_world_x, 1] += 1
+        rover.worldmap[nav_world_y, nav_world_x, 2] += 1
+        rover.worldmap[nav_world_y, nav_world_x, 0] -= 0.5  # remove obstacle data if navigable
 
     nav_rover_x, nav_rover_y = rover_coords(navigable)
     dist, angles = to_polar_coords(nav_rover_x, nav_rover_y)
