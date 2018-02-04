@@ -1,5 +1,41 @@
 import numpy as np
+import math
+from pathfinding import astar
 
+def nearest_unexplored(rover):
+    """
+    Returns the (x, y) coordinates of the closest unexplored point.
+    """
+
+    xpos = rover.pos[0]
+    ypos = rover.pos[1]
+
+    y_unexplored, x_unexplored = rover.unexplored.nonzero()
+    return min(zip(x_unexplored, y_unexplored), key=lambda point: abs(point[0] - xpos) + abs(point[1] - ypos))
+
+def nearest_unexplored_path(rover):
+    """
+    Returns the angle to the next point on the path to then nearest unexplored area
+    :param rover:
+    :return:
+    """
+    unexplored = nearest_unexplored(rover)
+    path = astar(rover.search_grid, (int(rover.pos[1]), int(rover.pos[0])), (unexplored[1], unexplored[0]))
+    rover.worldmap[:,:,2] = np.zeros_like(rover.worldmap[:,:,2])
+    for point in path:
+        rover.worldmap[point[0]][point[1]][0] = 255
+        rover.worldmap[point[0]][point[1]][1] = 255
+        rover.worldmap[point[0]][point[1]][2] = 255
+    index = min(8, len(path) - 1) # start a few points away from the current position
+    waypoint = (path[index][1], path[index][0]) # skip start point and switch xy
+    desired_yaw = math.atan2(waypoint[1] - rover.pos[1], waypoint[0] - rover.pos[0])
+    yaw_difference = math.degrees(desired_yaw) - rover.yaw
+    while yaw_difference < -180:
+        yaw_difference += 360
+    while yaw_difference > 180:
+        yaw_difference -= 360
+    print("\nWaypoint {}, Steering angle {}".format(waypoint,yaw_difference))
+    return yaw_difference
 
 # This is where you can build a decision tree for determining throttle, brake and steer 
 # commands based on the output of the perception_step() function
@@ -25,7 +61,20 @@ def decision_step(Rover):
                     Rover.throttle = 0
                 Rover.brake = 0
                 # Set steering to average angle clipped to the range +/- 15
-                Rover.steer = np.clip(np.mean(Rover.nav_angles * 180/np.pi), -15, 15)
+                # Rover.steer = np.clip(np.mean(Rover.nav_angles * 180/np.pi), -15, 15)
+                steering_angle = nearest_unexplored_path(Rover)
+                if abs(steering_angle) > 30:
+                    if Rover.vel > 0.1:
+                        # slow down if steering angle is very large
+                        Rover.throttle = 0
+                        # Set brake to stored brake value
+                        Rover.brake = Rover.brake_set
+                    else:
+                        Rover.throttle = 0
+                        Rover.brake = 0 # release brake to allow turning
+                    Rover.steer = steering_angle
+                else:
+                    Rover.steer = steering_angle
             # If there's a lack of navigable terrain pixels then go to 'stop' mode
             elif len(Rover.nav_angles) < Rover.stop_forward:
                     # Set mode to "stop" and hit the brakes!
@@ -66,6 +115,12 @@ def decision_step(Rover):
         Rover.throttle = Rover.throttle_set
         Rover.steer = 0
         Rover.brake = 0
+
+    # update explored area
+    dist = 5
+    xpos = int(Rover.pos[0])
+    ypos = int(Rover.pos[1])
+    Rover.unexplored[ypos-dist:ypos + dist, xpos-dist:xpos + dist] = 0
         
     # If in a state where want to pickup a rock send pickup command
     if Rover.near_sample and Rover.vel == 0 and not Rover.picking_up:
