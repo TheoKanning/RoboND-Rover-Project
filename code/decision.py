@@ -117,7 +117,7 @@ def decision_step(Rover):
         Rover.brake = 0
 
     # update explored area
-    dist = 5
+    dist = 8
     xpos = int(Rover.pos[0])
     ypos = int(Rover.pos[1])
     Rover.unexplored[ypos-dist:ypos + dist, xpos-dist:xpos + dist] = 0
