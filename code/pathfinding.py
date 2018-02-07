@@ -2,10 +2,11 @@ import math
 import numpy as np
 
 class Node:
-    def __init__(self, point, h):
+    def __init__(self, point, h, cost):
         self.point = point
         self.g = math.inf
         self.h = h
+        self.cost = cost
         self.parent = None
 
     def __eq__(self, other):
@@ -40,11 +41,11 @@ def astar(grid, start, goal):
 
     open = {}
     closed = {}
-    start_node = Node(start, distance(start, goal))
+    start_node = Node(start, distance(start, goal), min(grid[start[0]][start[1]], 10)) # use min in case we start out of bounds
     start_node.g = 0
     open[start] = start_node
     while open:
-        current = sorted(list(open.values()), key=lambda node: node.g + node.h)[0]
+        current = sorted(list(open.values()), key=lambda node: node.g + node.h + node.cost)[0]
         open.pop(current.point)
 
         if current.point == goal:
@@ -61,13 +62,13 @@ def astar(grid, start, goal):
                 continue
 
             if neighbor_point not in open:
-                neighbor = Node(neighbor_point, distance(neighbor_point, goal))
+                neighbor_cost = grid[neighbor_point[0]][neighbor_point[1]]
+                neighbor = Node(neighbor_point, distance(neighbor_point, goal), neighbor_cost)
             else:
                 neighbor = open[neighbor_point]
 
-            if neighbor.g > current.g + distance(current.point, neighbor_point):
-                # cost = grid[neighbor_point[0]][neighbor_point[1]]
-                neighbor.g = current.g + distance(current.point, neighbor_point)
+            if neighbor.g > current.g + distance(current.point, neighbor_point) + current.cost:
+                neighbor.g = current.g + distance(current.point, neighbor_point) + current.cost
                 neighbor.parent = current.point
                 open[neighbor_point] = neighbor
 
@@ -75,11 +76,11 @@ def astar(grid, start, goal):
 
 
 if __name__ == '__main__':
-    costs = [[1, 3, 3, None],
-             [1, None, 3, 1],
-             [1, None, 1, None],
-             [1, 3, 1, 1]]
+    costs = [[1, 1,      3, np.inf],
+             [1, np.inf, 10, 1],
+             [1, np.inf, 1, np.inf],
+             [1, 3,      1, 1]]
 
-    start = (0, 0)
+    start = (0, 1)
     goal = (3, 3)
     print(astar(costs, start, goal))
