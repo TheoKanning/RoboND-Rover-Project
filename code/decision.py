@@ -2,40 +2,72 @@ import numpy as np
 import math
 from pathfinding import astar
 
-def nearest_unexplored(rover):
+
+def steering_angle_between_points(start, end, current_yaw):
+    # Returns the steering angle required to for the rover to face the given point
+    # angle is in degrees, and between -180 and 180
+    desired_yaw = math.atan2(end[1] - start[1], end[0] - start[0])
+    steer_angle = math.degrees(desired_yaw) - current_yaw
+
+    # keep angle between -180 and 180
+    while steer_angle < -180:
+        steer_angle += 360
+    while steer_angle > 180:
+        steer_angle -= 360
+
+    return steer_angle
+
+
+def get_destination(rover):
     """
     Returns the (x, y) coordinates of the closest unexplored point.
     """
 
-    xpos = rover.pos[0]
-    ypos = rover.pos[1]
+    # todo handle when all points are explored
+
+    def manhattan_distance(point):
+        # manhattan distance from rover
+        return abs(point[0] - rover.pos[0]) + abs(point[1] - rover.pos[1])
+
+    def score(point, rover):
+        # returns a score that captures how difficult navigating to the selected point will be
+        # takes into account straight line distance, steering angle, and proximity to walls
+        distance = math.sqrt((point[0] - rover.pos[0]) ** 2 + (point[1] - rover.pos[1]) ** 2)
+        angle = steering_angle_between_points(rover.pos, point, rover.yaw)
+        return distance + abs(angle) / 5 + rover.search_grid[point[1]][point[0]]
 
     y_unexplored, x_unexplored = rover.unexplored.nonzero()
-    return min(zip(x_unexplored, y_unexplored), key=lambda point: abs(point[0] - xpos) + abs(point[1] - ypos))
+    unexplored_points = [(x, y) for x, y in zip(x_unexplored, y_unexplored)]
+    unexplored_points.sort(key=manhattan_distance)  # sort by distance from rover
 
-def nearest_unexplored_path(rover):
+    # get fifty closest points
+    closest_points = unexplored_points[:min(50, len(unexplored_points))]
+
+    # sort again, this time prioritizing points in front of the rover
+    closest_points.sort(key=lambda point: score(point, rover))
+
+    # return best point
+    return closest_points[0]
+
+
+def get_steer_angle(rover):
     """
-    Returns the angle to the next point on the path to then nearest unexplored area
+    Returns the angle to the next point on the path to the destination
     :param rover:
     :return:
     """
-    unexplored = nearest_unexplored(rover)
-    path = astar(rover.search_grid, (int(rover.pos[1]), int(rover.pos[0])), (unexplored[1], unexplored[0]))
+    destination = get_destination(rover)
+    path = astar(rover.search_grid, (int(rover.pos[1]), int(rover.pos[0])), (destination[1], destination[0]))
     rover.worldmap[:,:,2] = np.zeros_like(rover.worldmap[:,:,2])
     for point in path:
         rover.worldmap[point[0]][point[1]][0] = 255
         rover.worldmap[point[0]][point[1]][1] = 255
         rover.worldmap[point[0]][point[1]][2] = 255
     index = min(8, len(path) - 1) # start a few points away from the current position
-    waypoint = (path[index][1], path[index][0]) # skip start point and switch xy
-    desired_yaw = math.atan2(waypoint[1] - rover.pos[1], waypoint[0] - rover.pos[0])
-    yaw_difference = math.degrees(desired_yaw) - rover.yaw
-    while yaw_difference < -180:
-        yaw_difference += 360
-    while yaw_difference > 180:
-        yaw_difference -= 360
-    print("\nWaypoint {}, Steering angle {}".format(waypoint,yaw_difference))
-    return yaw_difference
+    waypoint = (path[index][1], path[index][0]) # switch xy
+
+    return steering_angle_between_points(rover.pos, waypoint, rover.yaw)
+
 
 # This is where you can build a decision tree for determining throttle, brake and steer 
 # commands based on the output of the perception_step() function
@@ -62,7 +94,7 @@ def decision_step(Rover):
                 Rover.brake = 0
                 # Set steering to average angle clipped to the range +/- 15
                 # Rover.steer = np.clip(np.mean(Rover.nav_angles * 180/np.pi), -15, 15)
-                steering_angle = nearest_unexplored_path(Rover)
+                steering_angle = get_steer_angle(Rover)
                 if abs(steering_angle) > 30:
                     if Rover.vel > 0.1:
                         # slow down if steering angle is very large
