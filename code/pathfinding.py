@@ -1,5 +1,5 @@
 import math
-import numpy as np
+
 
 class Node:
     def __init__(self, point, h, cost):
@@ -25,8 +25,7 @@ def get_neighbors(point, grid):
               (point[0] + 1, point[1]),
               (point[0], point[1] - 1),
               (point[0], point[1] + 1)]
-    points = [p for p in points if (0 <= p[0] < len(grid)) and (0 <= p[1] < len(grid[0]))]
-    return [point for point in points if grid[point[0]][point[1]] != np.inf]
+    return [p for p in points if (0 <= p[0] < len(grid)) and (0 <= p[1] < len(grid[0]))]
 
 
 def astar(grid, start, goal):
@@ -76,9 +75,9 @@ def astar(grid, start, goal):
 
 
 if __name__ == '__main__':
-    costs = [[1, 1,      3, np.inf],
-             [1, np.inf, 10, 1],
-             [1, np.inf, 1, np.inf],
+    costs = [[1, 1,      3, 1000],
+             [1, 1000, 10, 1],
+             [1, 1000, 1, 1000],
              [1, 3,      1, 1]]
 
     start = (0, 1)
