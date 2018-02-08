@@ -21,10 +21,14 @@ def get_neighbors(point, grid):
     """
     Returns a list of all neighbor points
     """
-    points = [(point[0] - 1, point[1]),
-              (point[0] + 1, point[1]),
-              (point[0], point[1] - 1),
-              (point[0], point[1] + 1)]
+    points = [(point[0] + 1, point[1]),
+              (point[0] + 1, point[1] + 1),
+              (point[0]    , point[1] + 1),
+              (point[0] - 1, point[1] + 1),
+              (point[0] - 1, point[1]),
+              (point[0] - 1, point[1] - 1),
+              (point[0]    , point[1] - 1),
+              (point[0] + 1, point[1] - 1)]
     return [p for p in points if (0 <= p[0] < len(grid)) and (0 <= p[1] < len(grid[0]))]
 
 
