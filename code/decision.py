@@ -58,11 +58,11 @@ def get_steer_angle(rover):
     """
     destination = get_destination(rover)
     path = astar(rover.search_grid, (int(rover.pos[1]), int(rover.pos[0])), (destination[1], destination[0]))
-    rover.worldmap[:,:,2] = np.zeros_like(rover.worldmap[:,:,2])
-    for point in path:
-        rover.worldmap[point[0]][point[1]][0] = 255
-        rover.worldmap[point[0]][point[1]][1] = 255
-        rover.worldmap[point[0]][point[1]][2] = 255
+    # rover.worldmap[:,:,2] = np.zeros_like(rover.worldmap[:,:,2])
+    # for point in path:
+    #     rover.worldmap[point[0]][point[1]][0] = 255
+    #     rover.worldmap[point[0]][point[1]][1] = 255
+    #     rover.worldmap[point[0]][point[1]][2] = 255
     index = min(8, len(path) - 1) # start a few points away from the current position
     waypoint = (path[index][1], path[index][0]) # switch xy
 
