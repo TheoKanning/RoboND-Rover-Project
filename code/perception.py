@@ -26,6 +26,8 @@ def hsv_thresh(rgb_img, low=(15, 80, 130), high=(30, 255, 180)):
     return color_select
 
 
+
+
 def get_navigable(img, rgb_thresh=(160, 160, 160)):
     return color_thresh(img, rgb_thresh)
 
@@ -108,10 +110,10 @@ def image_to_world(binary_img, xpos, ypos, yaw, worldsize, scale):
 
 
 # Define a function to perform a perspective transform
-def perspect_transform(image):
+def perspective_transform(image):
     dst_size = 5
     bottom_offset = 6
-    source = np.float32([[14, 140], [301, 140], [200, 96], [118, 96]])
+    source = np.float32([[7, 146], [313, 146], [200, 97], [120, 97]])
     destination = np.float32([[image.shape[1] / 2 - dst_size, image.shape[0] - bottom_offset],
                               [image.shape[1] / 2 + dst_size, image.shape[0] - bottom_offset],
                               [image.shape[1] / 2 + dst_size, image.shape[0] - 2 * dst_size - bottom_offset],
@@ -125,38 +127,16 @@ def perspect_transform(image):
 
 # Return true if rover is stable enough to record map data
 def stable(rover):
-    if 1 < rover.pitch < 359:
+    if 0.5 < rover.pitch < 359.5:
         return False
-    elif 1 < rover.roll < 359:
+    elif 0.5 < rover.roll < 359.5:
         return False
     return True
 
 
 # Apply the above functions in succession and update the Rover state accordingly
 def perception_step(rover):
-    # Perform perception steps to update Rover()
-    # TODO: 
-    # NOTE: camera image is coming to you in Rover.img
-    # 1) Define source and destination points for perspective transform
-    # 2) Apply perspective transform
-    # 3) Apply color threshold to identify navigable terrain/obstacles/rock samples
-    # 4) Update Rover.vision_image (this will be displayed on left side of screen)
-    # Example: Rover.vision_image[:,:,0] = obstacle color-thresholded binary image
-    #          Rover.vision_image[:,:,1] = rock_sample color-thresholded binary image
-    #          Rover.vision_image[:,:,2] = navigable terrain color-thresholded binary image
-
-    # 5) Convert map image pixel values to rover-centric coords
-    # 6) Convert rover-centric pixel values to world coordinates
-    # 7) Update Rover worldmap (to be displayed on right side of screen)
-    # Example: Rover.worldmap[obstacle_y_world, obstacle_x_world, 0] += 1
-    #          Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
-    #          Rover.worldmap[navigable_y_world, navigable_x_world, 2] += 1
-
-    # 8) Convert rover-centric pixel positions to polar coordinates
-    # Update Rover pixel distances and angles
-    # Rover.nav_dists = rover_centric_pixel_distances
-    # Rover.nav_angles = rover_centric_angles
-    warped = perspect_transform(rover.img)
+    warped = perspective_transform(rover.img)
     navigable = get_navigable(warped)
     obstacle = get_obstacle(warped)
     sample = hsv_thresh(warped)
@@ -173,13 +153,13 @@ def perception_step(rover):
     obs_world_x, obs_world_y = image_to_world(obstacle, xpos, ypos, yaw, rover.worldmap.shape[0], 10)
     sam_world_x, sam_world_y = image_to_world(sample, xpos, ypos, yaw, rover.worldmap.shape[0], 10)
 
-    rover.worldmap[:,:,0] = rover.unexplored
+    # rover.worldmap[:,:,0] = rover.unexplored
 
-    # if stable(rover):
-    #     rover.worldmap[obs_world_y, obs_world_x, 0] += 1
-    #     rover.worldmap[sam_world_y, sam_world_x, 1] += 1
-    #     rover.worldmap[nav_world_y, nav_world_x, 2] += 1
-    #     rover.worldmap[nav_world_y, nav_world_x, 0] -= 0.5  # remove obstacle data if navigable
+    if stable(rover):
+        rover.worldmap[obs_world_y, obs_world_x, 0] += 1
+        rover.worldmap[sam_world_y, sam_world_x, 1] += 1
+        rover.worldmap[nav_world_y, nav_world_x, 2] += 1
+        rover.worldmap[nav_world_y, nav_world_x, 0] -= 0.5  # remove obstacle data if navigable
 
     nav_rover_x, nav_rover_y = rover_coords(navigable)
     dist, angles = to_polar_coords(nav_rover_x, nav_rover_y)
