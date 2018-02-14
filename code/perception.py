@@ -26,6 +26,12 @@ def hsv_thresh(rgb_img, low=(15, 80, 130), high=(30, 255, 180)):
     return color_select
 
 
+# Remove pixels that are near the edge of the rover's view
+def trim(binary_img):
+    binary_img[0:80, :] = 0
+    binary_img[:, 0:80] = 0
+    binary_img[:, -80:] = 0
+    return binary_img
 
 
 def get_navigable(img, rgb_thresh=(160, 160, 160)):
@@ -137,9 +143,9 @@ def stable(rover):
 # Apply the above functions in succession and update the Rover state accordingly
 def perception_step(rover):
     warped = perspective_transform(rover.img)
-    navigable = get_navigable(warped)
-    obstacle = get_obstacle(warped)
-    sample = hsv_thresh(warped)
+    navigable = trim(get_navigable(warped))
+    obstacle = trim(get_obstacle(warped))
+    sample = trim(hsv_thresh(warped))
 
     # update rover's vision for debugging
     rover.vision_image[:, :, 0] = obstacle * 255
