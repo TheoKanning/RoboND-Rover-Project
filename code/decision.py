@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from pathfinding import astar
+from scipy.ndimage.filters import gaussian_filter
 
 
 def steering_angle_between_points(start, end, current_yaw):
@@ -34,7 +35,7 @@ def get_destination(rover):
         # takes into account straight line distance, steering angle, and proximity to walls
         distance = math.sqrt((point[0] - rover.pos[0]) ** 2 + (point[1] - rover.pos[1]) ** 2)
         angle = steering_angle_between_points(rover.pos, point, rover.yaw)
-        return distance + abs(angle) / 5 + rover.search_grid[point[1]][point[0]]
+        return distance + abs(angle) / 5 + min(rover.worldmap[point[1], point[0], 0], 30)
 
     y_unexplored, x_unexplored = rover.unexplored.nonzero()
     unexplored_points = [(x, y) for x, y in zip(x_unexplored, y_unexplored)]
@@ -57,14 +58,17 @@ def get_steer_angle(rover):
     :return:
     """
     destination = get_destination(rover)
-    path = astar(rover.search_grid, (int(rover.pos[1]), int(rover.pos[0])), (destination[1], destination[0]))
-    # rover.worldmap[:,:,2] = np.zeros_like(rover.worldmap[:,:,2])
+    costs = gaussian_filter(rover.worldmap[:,:,0], 0.8)
+
+    path = astar(costs, (int(rover.pos[1]), int(rover.pos[0])), (destination[1], destination[0]))
+
+    rover.worldmap[:, :, 2] = np.zeros_like(rover.worldmap[:, :, 2])
     # for point in path:
-    #     rover.worldmap[point[0]][point[1]][0] = 255
     #     rover.worldmap[point[0]][point[1]][1] = 255
     #     rover.worldmap[point[0]][point[1]][2] = 255
-    index = min(8, len(path) - 1) # start a few points away from the current position
-    waypoint = (path[index][1], path[index][0]) # switch xy
+
+    index = min(3, len(path) - 1)  # start a few points away from the current position
+    waypoint = (path[index][1] + 0.5, path[index][0] + 0.5)  # switch xy and try to move to center of square
 
     return steering_angle_between_points(rover.pos, waypoint, rover.yaw)
 
@@ -106,6 +110,7 @@ def decision_step(Rover):
                         Rover.brake = 0 # release brake to allow turning
                     Rover.steer = steering_angle
                 else:
+
                     Rover.steer = steering_angle
             # If there's a lack of navigable terrain pixels then go to 'stop' mode
             elif len(Rover.nav_angles) < Rover.stop_forward:
