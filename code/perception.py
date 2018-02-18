@@ -159,13 +159,12 @@ def perception_step(rover):
     obs_world_x, obs_world_y = image_to_world(obstacle, xpos, ypos, yaw, rover.worldmap.shape[0], 10)
     sam_world_x, sam_world_y = image_to_world(sample, xpos, ypos, yaw, rover.worldmap.shape[0], 10)
 
-    # rover.worldmap[:,:,0] = rover.unexplored
-
     if stable(rover):
         rover.worldmap[obs_world_y, obs_world_x, 0] += 1
         rover.worldmap[sam_world_y, sam_world_x, 1] += 1
         rover.worldmap[nav_world_y, nav_world_x, 2] += 1
-        rover.worldmap[nav_world_y, nav_world_x, 0] -= 0.5  # remove obstacle data if navigable
+        rover.worldmap[nav_world_y, nav_world_x, 0] -= 1  # remove obstacle data if navigable
+        rover.worldmap[:, :, 0] = np.clip(rover.worldmap[:, :, 0], 0, 255)  # don't let obstacle value go below 0
 
     nav_rover_x, nav_rover_y = rover_coords(navigable)
     dist, angles = to_polar_coords(nav_rover_x, nav_rover_y)

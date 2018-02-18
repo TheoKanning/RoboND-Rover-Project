@@ -79,16 +79,6 @@ class RoverState():
         self.send_pickup = False # Set to True to trigger rock pickup
         self.unexplored = np.zeros_like(ground_truth_3d[:,:,0])
         self.unexplored[ground_truth_3d[:,:,1] == 255] = 1
-        self.search_grid = np.full(np.shape(self.unexplored), 1000)
-        self.search_grid[self.unexplored == 1] = 0
-
-        # move inward from walls and assign costs
-        for cost in [30, 10, 5, 3, 2, 1]:
-            y_indices, x_indices = np.where(self.search_grid == 0)
-            snapshot = np.copy(self.search_grid) # copy that's not modified while looping
-            for y, x in zip(y_indices, x_indices):
-                if np.sum(snapshot[y-1:y+2, x-1:x+2]) > 0:
-                    self.search_grid[y][x] = cost
 
 
 # Initialize our rover
