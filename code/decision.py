@@ -2,7 +2,9 @@ import numpy as np
 import math
 from pathfinding import astar
 from scipy.ndimage.filters import gaussian_filter
+from d_star import DStarNavigator
 
+navigator = DStarNavigator()
 
 def steering_angle_between_points(start, end, current_yaw):
     # Returns the steering angle required to for the rover to face the given point
@@ -60,9 +62,9 @@ def get_steer_angle(rover):
     destination = get_destination(rover)
     costs = gaussian_filter(rover.worldmap[:,:,0], 0.8)
 
-    path = astar(costs, (int(rover.pos[1]), int(rover.pos[0])), (destination[1], destination[0]))
+    path = navigator.find_path((int(rover.pos[1]), int(rover.pos[0])), (destination[1], destination[0]), costs)
 
-    rover.worldmap[:, :, 2] = np.zeros_like(rover.worldmap[:, :, 2])
+    # rover.worldmap[:, :, 2] = np.zeros_like(rover.worldmap[:, :, 2])
     # for point in path:
     #     rover.worldmap[point[0]][point[1]][1] = 255
     #     rover.worldmap[point[0]][point[1]][2] = 255
