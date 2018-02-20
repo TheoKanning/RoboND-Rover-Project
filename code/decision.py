@@ -1,10 +1,10 @@
 import numpy as np
 import math
-from pathfinding import astar
 from scipy.ndimage.filters import gaussian_filter
 from d_star import DStarNavigator
 
 navigator = DStarNavigator()
+
 
 def steering_angle_between_points(start, end, current_yaw):
     # Returns the steering angle required to for the rover to face the given point
