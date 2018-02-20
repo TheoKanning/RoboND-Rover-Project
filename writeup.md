@@ -1,6 +1,4 @@
 ## Project: Search and Sample Return
-### Writeup Template: You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
 ---
 
 
@@ -24,7 +22,10 @@
 
 [image1]: ./misc/rover_image.jpg
 [image2]: ./calibration_images/example_grid1.jpg
-[image3]: ./calibration_images/example_rock1.jpg 
+[image3]: ./calibration_images/example_rock1.jpg
+[warped]: ./writeup_images/warped.jpg 
+[obstacle]: ./writeup_images/obstacle.jpg 
+[navigable]: ./writeup_images/navigable.jpg 
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/916/view) Points
 ### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
@@ -37,7 +38,36 @@
 You're reading it!
 
 ### Notebook Analysis
-#### 1. Run the functions provided in the notebook on test images (first with the test data provided, next on data you have recorded). Add/modify functions to allow for color selection of obstacles and rock samples.
+#### 1. Obstacle Detection
+An RGB threshold was applied to each image after the perspective transform in order to find obstacles. Since the obstacles 
+were all lighter than the drivable surface, any pixel with RGB values all over 160 was assigned as a drivable area. Any
+pixel that was not drivable was considered an obstacle. Any values behind the rover's field of view was considered to be
+ neither an obstacle nor a navigable area. For example, look at the following image after a perspective transform. 
+ 
+ *Warped Image*
+ 
+ ![Warped][warped]
+ 
+ 
+ Notice the black areas in the bottom left and right. These pixels can't be seen by the camera, so they appear black after 
+ applying the perspective transform.
+ 
+ *Navigable Area*
+ 
+ ![Navigable]
+ 
+ This is the navigable area. These pixels are identified by having RGB values all above 160.
+ 
+ *Obstacles*
+ 
+ ![Obstacle]
+ 
+ The obstacle area is the inverse of the navigable area, except for the bottom left and right areas. After taking the 
+ inverse of the navigable area, any pixel that is (0,0,0) in the warped image is set to 0 here.
+ 
+ 
+
+#### 2. Sample Detection
 Here is an example of how to include an image in your writeup.
 
 ![alt text][image1]
@@ -57,7 +87,8 @@ And another!
 
 Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
 
-
+Improvements:
+Better RGB threshold to include shadowy areas because my algorithm does a good job of avoiding walls anyway
 
 ![alt text][image3]
 
