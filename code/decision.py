@@ -64,6 +64,7 @@ def get_steer_angle(rover):
 
     path = navigator.find_path((int(rover.pos[1]), int(rover.pos[0])), (destination[1], destination[0]), costs)
 
+    # Uncomment to show navigation path over map
     # rover.worldmap[:, :, 2] = np.zeros_like(rover.worldmap[:, :, 2])
     # for point in path:
     #     rover.worldmap[point[0]][point[1]][1] = 255

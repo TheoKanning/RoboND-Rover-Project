@@ -21,6 +21,7 @@ class DStarNavigator:
         self.queue = None
         self.nodes = None
         self.costs = None
+        self.old_costs = None
         self.k_m = 0
         self.start_point = None
         self.goal_point = None
@@ -33,10 +34,11 @@ class DStarNavigator:
         self.nodes = NodeDict()
         self.queue = []
         self.costs = costs
+        self.old_costs = costs
         self.k_m = 0
         self.start_point = start_point
         self.goal_point = goal_point
-        self.last_goal = None
+        self.last_goal = goal_point
 
         goal = Node(goal_point)
         goal.rhs = 0
@@ -104,6 +106,13 @@ class DStarNavigator:
                 for neighbor in self.get_neighbors(u):
                     self.update_vertex(neighbor)
 
+    def update_costs(self, costs):
+        change_x, change_y = (self.costs - costs).nonzero()
+        self.costs = costs
+        for x, y in zip(change_x, change_y):
+            if distance((x,y), self.start_point) < 4 and (x,y) != self.goal_point:
+                self.update_vertex((x,y))
+
     def extract_path(self):
         current = self.start_point
         path = []
@@ -125,11 +134,12 @@ class DStarNavigator:
 
     def find_path(self, start_point, goal_point, costs):
         if goal_point != self.last_goal:
+            print("\n\n\n New Goal \n\n\n")
             # starting a new search, wipe everything
             self.initialize(start_point, goal_point, costs)
             self.compute_shortest_path()
         else:
-            # todo handle obstacle detection
+            self.update_costs(costs)
             self.k_m += heuristic(self.nodes[self.start_point], start_point)
             self.start_point = start_point
             self.compute_shortest_path()
