@@ -1,6 +1,7 @@
 import math
 import heapq
 
+# based on https://github.com/mdeyo/d-star-lite
 
 class Node:
     def __init__(self, point):
